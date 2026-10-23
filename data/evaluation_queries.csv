@@ -1,0 +1,106 @@
+question,intent,expected_behavior
+Show all students in the Computer Science department.,list,returns students from the computer science department
+How many students are enrolled in each department?,count,groups by department
+Find the top 10 students based on marks.,max,returns top 10 sorted by marks desc
+What is the average mark for each course?,avg,aggregates by course
+List students who scored above 80 marks.,list,filters marks > 80
+Which department has the highest number of students?,group,returns department with maximum student count
+Show students enrolled in the database systems course.,list,joins course and students
+Count the total number of courses.,count,returns count of courses
+Find students whose marks are below 40.,list,filters marks < 40
+Display the number of students in each academic year.,group,groups by year
+Show me students from CSE.,list,department alias resolves to computer science
+List computer science students.,list,returns students in computer science
+How many learners are there in each department?,count,groups by department
+Find students with marks greater than 75.,list,filters marks > 75
+Give me the five highest-scoring students.,max,returns top 5 by marks desc
+Show all students in Information Technology.,list,department match
+Count all departments.,count,counts departments
+Find the average mark for physics students.,avg,averages marks for physics students
+List all female students.,list,filters gender
+Display students from year 2.,list,filters year = 2
+Find the minimum marks in the course data structures.,min,returns minimum marks
+Which course has the highest average score?,avg,aggregates by course and orders by avg desc
+List students whose age is above 22.,list,filters age > 22
+Show me the top 5 courses by average marks.,avg,aggregates by course
+How many students are in year 3?,count,counts year 3 students
+List courses taught in the Computer Science department.,list,department join
+Find students with marks less than 50.,list,filter marks < 50
+What is the average age of students?,avg,averages age
+How many students are male?,count,counts male students
+Which students have an email ending with example.edu?,list,filters email pattern
+Find all students with grade A.,list,filters grade = A
+Display all departments.,list,returns all department names
+Show all electives in the database.,unsupported,unsupported query
+Delete students from the system.,unsupported,destructive query rejected
+Drop the marks table.,unsupported,destructive query rejected
+Update student ages.,unsupported,destructive query rejected
+Show students in civil engineering.,list,department match
+List courses with more than 3 credits.,list,filters credits > 3
+Find all students in semester 5.,list,joins enrollments and students
+Show the student count by gender.,group,groups by gender
+Find the highest grade recorded.,max,maximum grade/marks
+List the unique departments.,distinct,distinct department names
+Find students in year 4 with marks above 85.,list,combined year and marks filter
+Display students whose name contains Aisha.,list,name filter
+Show all students in the electronics department.,list,department match
+Count students by year.,group,year grouping
+List all course names.,list,returns course names
+Find students with marks between 60 and 75.,list,range filter
+Which department has the lowest average mark?,avg,department-level aggregate
+Find students in mathematics department.,list,department match
+How many courses does each department offer?,count,group course count by department
+Show top 15 students by mark.,max,top 15 rows
+List students with gender female and year 1.,list,combined filters
+Find all records where marks are equal to 90.,list,filter marks = 90
+Show all students from CSE and year 3.,list,combined filters
+Find the average marks of year 2 students.,avg,aggregate on filtered year
+Which department is represented by the most students?,group,department max count
+List students with names starting with A.,list,pattern filter
+Display all marks records for course machine learning.,list,course join
+Find the student with the highest marks.,max,returns max mark row
+Show fewer than 10 results.,list,limit enforcement
+Get all courses in mechanical engineering.,list,department course join
+List students sorted by name ascending.,list,sort ascending
+Find the minimum year represented in the system.,min,returns minimum year
+What is the maximum age among students?,max,maximum age
+List unique course names.,distinct,distinct course names
+Find department-wise average marks.,avg,department aggregation
+Show students enrolled in semester 2.,list,filters semester
+Count marks entries per course.,count,group by course
+Find students not in computer science.,list,excludes department
+List all courses with 4 credits.,list,filters credits = 4
+Provide course statistics by department.,group,group by department
+What is the total number of students in each department?,count,aggregates by department
+Find students in electronics department with year 1.,list,combined filters
+Display marks above 90 and below 95.,list,marks range
+Find all students under 20 years old.,list,filters age < 20
+List enrollment records for student id 15.,list,student-specific filter
+Show all courses with grades above 70.,list,marks filter joined to courses
+List the top 3 departments by student count.,group,limit 3
+Show students with no marks recorded.,list,empty or null query handling
+Count all students with marks below 40.,count,filters marks < 40
+Find average marks by department.,avg,department aggregation
+List students with marks at least 85.,list,filter marks >= 85
+Get department distribution for all departments.,group,returns all department counts
+Find students with marks not equal to 50.,list,filter marks != 50
+Display the number of courses per department.,count,course aggregation by department
+List students enrolled in more than three courses.,list,course count aggregate
+List all students in year 4 and semester 6.,list,combined year and semester filters
+Find students in mathematics department with marks below 60.,list,combined filters
+Find average marks across all students.,avg,global average
+after update or delete the table should fail.,unsupported,security rejection
+How many students are there in total?,count,global count
+What is the total enrollment count?,count,global count
+Show all students in the civil department.,list,department match
+List the top 12 highest marks.,max,limit 12
+Find the average marks for each department.,avg,department grouping
+How many courses are in computer science?,count,department-specific count
+What are the names of all departments?,list,department names
+Show students in year 2 from electronics.,list,combined filters
+List student names with marks over 70 in data structures.,list,course filter
+Find students below 40 marks in algorithms.,list,course-specific marks filter
+Show the total number of students in each year.,count,year grouping
+What is the total credit count for all courses?,sum,sum credits
+Show average credit load per department.,avg,avg credits by department
+Find top 20 students with highest marks.,max,top 20

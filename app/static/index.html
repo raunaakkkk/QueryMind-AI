@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f6fa" />
+  <title>QueryMind AI | College data</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="QueryMind AI home">
+        <span class="brand-mark" aria-hidden="true">Q</span>
+        <span class="brand-copy">
+          <span class="brand-name">QueryMind <span>AI</span></span>
+          <span class="brand-tagline">Ask naturally. Query intelligently.</span>
+        </span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#ask">Ask</a>
+        <a href="#overview">Overview</a>
+        <a href="#results">Results</a>
+      </nav>
+      <button id="reset-button" class="secondary-button reset-button" type="button">Reset</button>
+    </header>
+
+    <main>
+      <div class="page-intro">
+        <div>
+          <p class="eyebrow">Academic data workspace</p>
+          <h1>Explore your college data</h1>
+        </div>
+        <p class="intro-note">Ask a question in plain language to get a clear, safe database answer.</p>
+      </div>
+
+      <div class="layout">
+        <section class="panel query-panel" id="ask" aria-labelledby="ask-heading">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Natural language</p>
+              <h2 id="ask-heading">Ask a question</h2>
+            </div>
+          </div>
+          <form id="query-form">
+            <label for="question-input">What would you like to know?</label>
+            <textarea id="question-input" rows="3" placeholder="e.g. Show students in the Computer Science department." aria-describedby="question-hint"></textarea>
+            <div class="form-footer">
+              <p class="field-hint" id="question-hint">Queries are read-only and limited to the supported dataset.</p>
+              <div class="button-row">
+                <select id="example-select" class="example-select" aria-label="Choose a sample question">
+                  <option value="">Choose an example</option>
+                  <option value="How many students are enrolled in each department?">Students by department</option>
+                  <option value="Show the average marks for each course.">Average marks by course</option>
+                  <option value="List the top 10 students by marks.">Top students by marks</option>
+                </select>
+                <button type="submit" class="primary-button" id="run-query-button">
+                  <span class="button-label">Run query</span>
+                  <span class="button-arrow" aria-hidden="true">→</span>
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <div id="status" class="status" role="status" aria-live="polite"></div>
+
+          <div class="detail-grid">
+            <section class="result-block sql-block" aria-labelledby="sql-heading">
+              <div class="block-heading">
+                <h3 id="sql-heading">SQL preview</h3>
+                <button type="button" id="copy-sql" class="text-button" aria-label="Copy SQL to clipboard" disabled>Copy SQL</button>
+              </div>
+              <pre id="sql-preview" class="sql-preview"><code>-- Your query will appear here</code></pre>
+            </section>
+            <section class="result-block explanation-block" aria-labelledby="explanation-heading">
+              <h3 id="explanation-heading">Explanation</h3>
+              <p id="explanation-text" class="explanation-text">A plain-language summary of your results will appear here.</p>
+            </section>
+          </div>
+        </section>
+
+        <aside class="panel analytics-panel" id="overview" aria-labelledby="overview-heading">
+          <div class="section-heading overview-heading">
+            <div>
+              <p class="section-kicker">At a glance</p>
+              <h2 id="overview-heading">Overview</h2>
+            </div>
+            <span class="live-indicator"><span aria-hidden="true"></span> Live data</span>
+          </div>
+          <div id="summary-cards" class="summary-cards" aria-live="polite">
+            <p class="loading-placeholder">Loading overview…</p>
+          </div>
+          <div class="chart-wrapper">
+            <div class="chart-heading">
+              <div>
+                <h3>Department distribution</h3>
+                <p>Students by department</p>
+              </div>
+            </div>
+            <div id="chart-area" class="chart-area" aria-label="Student count by department" aria-live="polite">
+              <p class="loading-placeholder">Loading distribution…</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <section class="panel results-panel" id="results" aria-labelledby="results-heading">
+        <div class="panel-header-row">
+          <div class="results-title">
+            <p class="section-kicker">Query output</p>
+            <h2 id="results-heading">Results <span id="result-count" class="result-count">—</span></h2>
+          </div>
+          <div class="toolbar">
+            <label class="visually-hidden" for="table-select">Choose a table to explore</label>
+            <select id="table-select">
+              <option value="students">Students</option>
+              <option value="departments">Departments</option>
+              <option value="courses">Courses</option>
+              <option value="enrollments">Enrollments</option>
+              <option value="marks">Marks</option>
+            </select>
+            <button id="explore-table" class="secondary-button" type="button">Explore table</button>
+            <button id="export-csv" class="secondary-button" type="button" disabled>Export CSV</button>
+          </div>
+        </div>
+        <div class="table-container" role="region" aria-label="Query results table" tabindex="0">
+          <table id="results-table">
+            <thead></thead>
+            <tbody><tr><td class="empty-cell">Run a query or explore a table to see results.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel history-panel" aria-labelledby="history-heading">
+        <div class="history-heading">
+          <div>
+            <p class="section-kicker">Your workspace</p>
+            <h2 id="history-heading">Recent queries</h2>
+          </div>
+        </div>
+        <ul id="history-list" class="history-list" aria-label="Recent queries"></ul>
+        <p id="history-empty" class="empty-history">Your recent questions will appear here.</p>
+      </section>
+    </main>
+    <footer class="page-footer">QueryMind AI <span aria-hidden="true">·</span> Read-only academic data exploration</footer>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
