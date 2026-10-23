@@ -1,17 +1,86 @@
 from __future__ import annotations
 
+import re
 import sqlite3
 import time
 from typing import Any
 
 from app.config import DB_PATH, MAX_QUERY_ROWS
 from app.database.connection import get_connection
-from app.nlp.entity_extractor import extract_entities
+from app.nlp.entity_extractor import COURSE_ALIASES, DEPARTMENT_ALIASES, extract_entities
 from app.nlp.intent_detector import detect_intent
 from app.nlp.preprocessing import normalize_question
 from app.nlp.schema_mapper import map_query
 from app.sql.query_builder import build_query
 from app.sql.validator import validate_sql
+
+SCHEMA_REFERENCES = {
+    "student",
+    "students",
+    "learner",
+    "learners",
+    "department",
+    "departments",
+    "course",
+    "courses",
+    "enrollment",
+    "enrollments",
+    "enrolled",
+    "semester",
+    "semesters",
+    "mark",
+    "marks",
+    "score",
+    "scores",
+    "grade",
+    "grades",
+    "year",
+    "years",
+    "age",
+    "ages",
+    "gender",
+    "male",
+    "female",
+    "email",
+    "emails",
+    "credit",
+    "credits",
+}
+
+QUERY_ACTIONS = {
+    "show",
+    "list",
+    "display",
+    "give",
+    "find",
+    "fetch",
+    "get",
+    "provide",
+    "what",
+    "which",
+    "who",
+    "count",
+    "average",
+    "avg",
+    "mean",
+    "sum",
+    "minimum",
+    "lowest",
+    "min",
+    "maximum",
+    "highest",
+    "max",
+    "top",
+    "unique",
+    "distinct",
+    "how",
+    "many",
+    "number",
+    "total",
+    "each",
+    "by",
+    "per",
+}
 
 
 def parse_question(question: str) -> dict[str, Any]:
@@ -32,7 +101,20 @@ def parse_question(question: str) -> dict[str, Any]:
     mapped["limit"] = entities.get("limit") or 10
     if intent.get("group_by"):
         mapped["group_by"] = intent.get("group_by")
-    supported = True
+    tokens = set(re.findall(r"[a-z0-9]+", normalized))
+    has_schema_reference = bool(tokens & SCHEMA_REFERENCES) or any(
+        re.search(rf"(?<![a-z0-9]){re.escape(alias)}(?![a-z0-9])", normalized)
+        for alias in (*DEPARTMENT_ALIASES, *COURSE_ALIASES)
+        if len(alias) > 2
+    )
+    has_query_action = bool(tokens & QUERY_ACTIONS) or intent.get("group_by") is not None
+    generic_result_limit = bool(
+        re.search(r"\b(?:show|list|display|get|give|fetch)\s+(?:me\s+)?fewer than \d+ results?\b", normalized)
+    )
+    implicit_list = bool(
+        re.match(r"^(?:students?|learners?|departments?|courses?|enrollments?|marks?|grades?)\b", normalized)
+    )
+    supported = (has_schema_reference and (has_query_action or implicit_list)) or generic_result_limit
     unsupported_keywords = [
         "join",
         "update",
@@ -43,7 +125,8 @@ def parse_question(question: str) -> dict[str, Any]:
         "password",
         "file",
     ]
-    if any(token in normalized for token in unsupported_keywords):
+    destructive_action = re.search(r"\b(?:drop|delete|update|insert|create|alter)\b", normalized)
+    if any(token in normalized for token in unsupported_keywords) or destructive_action:
         supported = False
     return {
         "question": question,
@@ -57,6 +140,8 @@ def parse_question(question: str) -> dict[str, Any]:
 
 def generate_sql(question: str) -> tuple[str, list[Any], dict[str, Any]]:
     parsed = parse_question(question)
+    if not parsed["supported"]:
+        return "", [], parsed
     sql, params = build_query(parsed["mapped"])
     return sql, params, parsed
 
