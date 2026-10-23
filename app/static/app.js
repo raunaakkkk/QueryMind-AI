@@ -1,7 +1,10 @@
 const state = {
   history: [],
   currentResults: [],
-  currentSql: ''
+  currentSql: '',
+  requestId: 0,
+  activeController: null,
+  requestPending: false
 };
 
 const summaryCards = document.getElementById('summary-cards');
@@ -13,9 +16,67 @@ const statusEl = document.getElementById('status');
 const historyList = document.getElementById('history-list');
 const historyEmpty = document.getElementById('history-empty');
 const resultCount = document.getElementById('result-count');
+const executionTime = document.getElementById('execution-time');
 const exportButton = document.getElementById('export-csv');
 const copySqlButton = document.getElementById('copy-sql');
 const runQueryButton = document.getElementById('run-query-button');
+const exploreTableButton = document.getElementById('explore-table');
+const tableSelect = document.getElementById('table-select');
+const exampleSelect = document.getElementById('example-select');
+const questionInput = document.getElementById('question-input');
+
+function setRequestPending(pending) {
+  state.requestPending = pending;
+  runQueryButton.disabled = pending;
+  runQueryButton.setAttribute('aria-busy', String(pending));
+  runQueryButton.querySelector('.button-label').textContent = pending ? 'Running…' : 'Run query';
+  exploreTableButton.disabled = pending;
+  tableSelect.disabled = pending;
+  exampleSelect.disabled = pending;
+  questionInput.disabled = pending;
+}
+
+function beginRequest() {
+  if (state.requestPending) {
+    return null;
+  }
+
+  state.requestId += 1;
+  state.activeController = new AbortController();
+  setRequestPending(true);
+  return {
+    id: state.requestId,
+    signal: state.activeController.signal
+  };
+}
+
+function isCurrentRequest(request) {
+  return request !== null && request.id === state.requestId;
+}
+
+function finishRequest(request) {
+  if (!isCurrentRequest(request)) {
+    return;
+  }
+  state.activeController = null;
+  setRequestPending(false);
+}
+
+function cancelActiveRequest() {
+  state.requestId += 1;
+  state.activeController?.abort();
+  state.activeController = null;
+  setRequestPending(false);
+}
+
+class ApiError extends Error {
+  constructor(message, status, payload) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.payload = payload;
+  }
+}
 
 async function fetchJson(url, options) {
   const response = await fetch(url, options);
@@ -23,12 +84,12 @@ async function fetchJson(url, options) {
   try {
     data = await response.json();
   } catch {
-    throw new Error(`The server returned an unreadable response (${response.status}).`);
+    throw new ApiError(`The server returned an unreadable response (${response.status}).`, response.status);
   }
 
   if (!response.ok) {
     const detail = Array.isArray(data.detail) ? data.detail.map((item) => item.msg).join(', ') : data.detail;
-    throw new Error(data.error || detail || `Request failed (${response.status}).`);
+    throw new ApiError(data.error || detail || `Request failed (${response.status}).`, response.status, data);
   }
   return data;
 }
@@ -119,7 +180,57 @@ function renderDistribution(distribution) {
   chartArea.replaceChildren(...rows);
 }
 
-function renderTable(rows, columns) {
+const columnLabels = {
+  total_count: 'Total count',
+  average_marks: 'Average marks',
+  total_marks: 'Total marks',
+  highest_marks: 'Highest marks',
+  lowest_marks: 'Lowest marks',
+  department_id: 'Department ID',
+  student_id: 'Student ID',
+  department_name: 'Department',
+  course_id: 'Course ID',
+  course_name: 'Course',
+  enrollment_id: 'Enrollment ID',
+  mark_id: 'Mark ID',
+  year: 'Year',
+  name: 'Name',
+  age: 'Age',
+  gender: 'Gender',
+  email: 'Email',
+  credits: 'Credits',
+  semester: 'Semester',
+  marks: 'Marks',
+  grade: 'Grade'
+};
+
+function setResultCount(count) {
+  const rowCount = Number(count);
+  if (!Number.isFinite(rowCount)) {
+    resultCount.textContent = 'Results unavailable';
+    return;
+  }
+  resultCount.textContent = `${formatNumber(rowCount)} ${rowCount === 1 ? 'row' : 'rows'}`;
+}
+
+function clearResults(message = 'Run a query or explore a table to see results.', countLabel = 'No results yet') {
+  const head = table.querySelector('thead');
+  const body = table.querySelector('tbody');
+  head.replaceChildren();
+  const row = document.createElement('tr');
+  const cell = document.createElement('td');
+  cell.className = 'empty-cell';
+  cell.colSpan = 1;
+  cell.textContent = message;
+  row.append(cell);
+  body.replaceChildren(row);
+  state.currentResults = [];
+  exportButton.disabled = true;
+  resultCount.textContent = countLabel;
+  executionTime.textContent = '';
+}
+
+function renderTable(rows, columns, emptyMessage = 'No rows returned.') {
   const normalizedRows = Array.isArray(rows) ? rows : [];
   const normalizedColumns = Array.isArray(columns) && columns.length
     ? columns
@@ -131,7 +242,8 @@ function renderTable(rows, columns) {
   normalizedColumns.forEach((column) => {
     const heading = document.createElement('th');
     heading.scope = 'col';
-    heading.textContent = column;
+    heading.textContent = columnLabels[column] || column;
+    heading.title = column;
     headerRow.append(heading);
   });
   head.replaceChildren(headerRow);
@@ -141,7 +253,7 @@ function renderTable(rows, columns) {
     const emptyCell = document.createElement('td');
     emptyCell.className = 'empty-cell';
     emptyCell.colSpan = Math.max(normalizedColumns.length, 1);
-    emptyCell.textContent = 'No rows returned.';
+    emptyCell.textContent = emptyMessage;
     emptyRow.append(emptyCell);
     body.replaceChildren(emptyRow);
   } else {
@@ -149,7 +261,11 @@ function renderTable(rows, columns) {
       const tableRow = document.createElement('tr');
       normalizedColumns.forEach((column) => {
         const cell = document.createElement('td');
-        cell.textContent = row[column] == null ? '' : String(row[column]);
+        const value = row[column];
+        cell.textContent = value === null ? 'NULL' : value === undefined ? '' : String(value);
+        if (typeof value === 'number') {
+          cell.classList.add('numeric-cell');
+        }
         tableRow.append(cell);
       });
       return tableRow;
@@ -159,7 +275,7 @@ function renderTable(rows, columns) {
 
   state.currentResults = normalizedRows;
   exportButton.disabled = normalizedRows.length === 0;
-  resultCount.textContent = formatNumber(normalizedRows.length);
+  setResultCount(normalizedRows.length);
 }
 
 function escapeHtml(value) {
@@ -181,7 +297,11 @@ const sqlKeywords = new Set([
 
 function highlightSql(sql) {
   const tokenPattern = /(--[^\n]*|'(?:''|[^'])*'|\b[A-Za-z_][A-Za-z_0-9]*\b|\b\d+(?:\.\d+)?\b|\?)/g;
-  const highlighted = sql.replace(tokenPattern, (token) => {
+  const displaySql = sql.replace(
+    /\s+(LEFT JOIN|INNER JOIN|RIGHT JOIN|JOIN|FROM|WHERE|GROUP BY|ORDER BY|HAVING|LIMIT)\b/gi,
+    '\n$1'
+  );
+  const highlighted = displaySql.replace(tokenPattern, (token) => {
     let className = '';
     if (token.startsWith('--')) {
       className = 'sql-comment';
@@ -207,39 +327,83 @@ function setSql(sql) {
 
 async function handleQuery(event) {
   event.preventDefault();
-  const questionInput = document.getElementById('question-input');
+  const request = beginRequest();
+  if (!request) {
+    return;
+  }
   const question = questionInput.value.trim();
   if (!question) {
+    finishRequest(request);
     setStatus('Please enter a question to get started.', 'error');
     questionInput.focus();
     return;
   }
 
   setStatus('Running your query…', 'loading');
-  runQueryButton.disabled = true;
-  runQueryButton.setAttribute('aria-busy', 'true');
-  runQueryButton.querySelector('.button-label').textContent = 'Running…';
+  clearResults('Query is running…', 'Loading…');
+  setSql('');
+  explanationText.textContent = 'Waiting for the query to complete.';
 
   try {
     const data = await fetchJson('/api/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question })
+      body: JSON.stringify({ question }),
+      signal: request.signal
     });
+    if (!isCurrentRequest(request)) {
+      return;
+    }
 
+    if (data.supported === false) {
+      clearResults('This question is not supported.', 'Not supported');
+      setSql('');
+      explanationText.textContent = 'Try one of the example questions or rephrase your request.';
+      setStatus('Unsupported question. Try one of the examples.', 'error');
+      return;
+    }
+
+    const rows = Array.isArray(data.results) ? data.results : [];
+    const columns = Array.isArray(data.columns) ? data.columns : [];
+    const count = Number(data.result_count ?? rows.length);
     setSql(data.sql || '');
     explanationText.textContent = data.explanation || 'Query completed.';
-    renderTable(data.results || [], data.columns || []);
-    setStatus(`Returned ${formatNumber(data.result_count ?? 0)} result(s) in ${formatNumber(data.execution_time_ms ?? 0)} ms.`, 'success');
+    renderTable(rows, columns, 'No matching records found.');
+    setResultCount(count);
+    const elapsed = Number(data.execution_time_ms);
+    executionTime.textContent = Number.isFinite(elapsed)
+      ? `${formatNumber(elapsed, Number.isInteger(elapsed) ? 0 : 2)} ms`
+      : '';
+    setStatus(
+      count === 0 ? 'Query completed. No matching records.' : 'Query completed successfully.',
+      'success'
+    );
 
     state.history = [question, ...state.history.filter((entry) => entry !== question)].slice(0, 5);
     renderHistory();
   } catch (error) {
-    setStatus(error.message || 'The query could not be completed.', 'error');
+    if (!isCurrentRequest(request) || error.name === 'AbortError') {
+      return;
+    }
+    const unsupported = error instanceof ApiError
+      && error.status === 400
+      && error.payload?.supported === false;
+    clearResults(
+      unsupported ? 'This question is not supported.' : 'Results are unavailable for this request.',
+      unsupported ? 'Not supported' : 'Unavailable'
+    );
+    setSql('');
+    explanationText.textContent = unsupported
+      ? 'Try one of the example questions or rephrase your request.'
+      : 'No results are available because the request could not be completed.';
+    setStatus(
+      unsupported
+        ? 'Unsupported question. Try one of the examples.'
+        : 'Could not run the query. Please try again.',
+      'error'
+    );
   } finally {
-    runQueryButton.disabled = false;
-    runQueryButton.removeAttribute('aria-busy');
-    runQueryButton.querySelector('.button-label').textContent = 'Run query';
+    finishRequest(request);
   }
 }
 
@@ -262,18 +426,32 @@ function renderHistory() {
 }
 
 async function exploreTable() {
-  const tableName = document.getElementById('table-select').value;
-  const exploreButton = document.getElementById('explore-table');
-  exploreButton.disabled = true;
+  const request = beginRequest();
+  if (!request) {
+    return;
+  }
+  const tableName = tableSelect.value;
+  clearResults('Loading table preview…', 'Loading…');
+  setSql('');
+  setStatus(`Loading ${tableName} preview…`, 'loading');
   try {
-    const data = await fetchJson(`/api/tables/${encodeURIComponent(tableName)}`);
-    renderTable(data.rows || [], data.columns || []);
+    const data = await fetchJson(`/api/tables/${encodeURIComponent(tableName)}`, { signal: request.signal });
+    if (!isCurrentRequest(request)) {
+      return;
+    }
+    const rows = Array.isArray(data.rows) ? data.rows : [];
+    renderTable(rows, data.columns || [], 'This table has no preview rows.');
     setSql(`SELECT * FROM ${tableName} LIMIT 25;`);
-    setStatus(`Showing ${formatNumber((data.rows || []).length)} preview row(s) from ${tableName}.`, 'success');
-  } catch (error) {
-    setStatus(error.message || 'The table preview could not be loaded.', 'error');
+    setStatus(`Table preview loaded: ${tableName}.`, 'success');
+  } catch {
+    if (!isCurrentRequest(request)) {
+      return;
+    }
+    clearResults('Table preview is unavailable.', 'Unavailable');
+    setSql('');
+    setStatus('Could not load the table preview. Please try again.', 'error');
   } finally {
-    exploreButton.disabled = false;
+    finishRequest(request);
   }
 }
 
@@ -303,14 +481,20 @@ function escapeCsvValue(value) {
 }
 
 async function copySql() {
-  if (!state.currentSql) {
+  const sql = state.currentSql;
+  if (!sql) {
     return;
   }
+  const requestId = state.requestId;
   try {
-    await navigator.clipboard.writeText(state.currentSql);
-    setStatus('SQL copied to clipboard.', 'success');
+    await navigator.clipboard.writeText(sql);
+    if (requestId === state.requestId && state.currentSql === sql) {
+      setStatus('SQL copied to clipboard.', 'success');
+    }
   } catch {
-    setStatus('Could not access the clipboard. Select and copy the SQL preview instead.', 'error');
+    if (requestId === state.requestId && state.currentSql === sql) {
+      setStatus('Clipboard unavailable. Select and copy the SQL preview instead.', 'error');
+    }
   }
 }
 
@@ -323,23 +507,15 @@ function setExample() {
 }
 
 function resetForm() {
-  document.getElementById('question-input').value = '';
-  document.getElementById('example-select').value = '';
+  cancelActiveRequest();
+  questionInput.value = '';
+  exampleSelect.value = '';
   setStatus('');
   setSql('');
   highlightSql('-- Your query will appear here');
   explanationText.textContent = 'A plain-language summary of your results will appear here.';
-  table.querySelector('thead').replaceChildren();
-  const emptyRow = document.createElement('tr');
-  const emptyCell = document.createElement('td');
-  emptyCell.className = 'empty-cell';
-  emptyCell.textContent = 'Run a query or explore a table to see results.';
-  emptyRow.append(emptyCell);
-  table.querySelector('tbody').replaceChildren(emptyRow);
-  state.currentResults = [];
-  resultCount.textContent = '—';
-  exportButton.disabled = true;
-  document.getElementById('question-input').focus();
+  clearResults();
+  questionInput.focus();
 }
 
 document.getElementById('query-form').addEventListener('submit', handleQuery);

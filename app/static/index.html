@@ -70,7 +70,7 @@
                 <h3 id="sql-heading">SQL preview</h3>
                 <button type="button" id="copy-sql" class="text-button" aria-label="Copy SQL to clipboard" disabled>Copy SQL</button>
               </div>
-              <pre id="sql-preview" class="sql-preview"><code>-- Your query will appear here</code></pre>
+              <pre id="sql-preview" class="sql-preview" tabindex="0" aria-label="Generated SQL preview"><code>-- Your query will appear here</code></pre>
             </section>
             <section class="result-block explanation-block" aria-labelledby="explanation-heading">
               <h3 id="explanation-heading">Explanation</h3>
@@ -108,7 +108,11 @@
         <div class="panel-header-row">
           <div class="results-title">
             <p class="section-kicker">Query output</p>
-            <h2 id="results-heading">Results <span id="result-count" class="result-count">—</span></h2>
+            <h2 id="results-heading">Results</h2>
+            <div class="result-metadata" aria-live="polite" aria-atomic="true">
+              <span id="result-count" class="result-count">No results yet</span>
+              <span id="execution-time" class="execution-time"></span>
+            </div>
           </div>
           <div class="toolbar">
             <label class="visually-hidden" for="table-select">Choose a table to explore</label>
@@ -125,6 +129,7 @@
         </div>
         <div class="table-container" role="region" aria-label="Query results table" tabindex="0">
           <table id="results-table">
+            <caption class="visually-hidden">Query results</caption>
             <thead></thead>
             <tbody><tr><td class="empty-cell">Run a query or explore a table to see results.</td></tr></tbody>
           </table>

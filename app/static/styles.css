@@ -12,7 +12,7 @@
   --primary-soft: #f0effa;
   --text: #17223b;
   --muted: #68748a;
-  --subtle: #8b95a7;
+  --subtle: #657187;
   --success: #28775b;
   --danger: #a83f4c;
   --shadow: 0 2px 10px rgba(22, 34, 59, 0.035), 0 12px 28px rgba(22, 34, 59, 0.025);
@@ -126,6 +126,9 @@ a {
 }
 
 .main-nav a {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
   color: var(--muted);
   text-decoration: none;
   padding: 8px 12px;
@@ -245,13 +248,18 @@ h3 {
 }
 
 .query-panel textarea::placeholder {
-  color: #9aa3b2;
+  color: var(--muted);
 }
 
 .query-panel textarea:focus {
   border-color: #8a83c8;
   box-shadow: 0 0 0 3px rgba(79, 70, 165, 0.09);
   outline: none;
+}
+
+.query-panel textarea:focus-visible {
+  outline: 3px solid rgba(79, 70, 165, 0.28);
+  outline-offset: 2px;
 }
 
 .form-footer {
@@ -338,6 +346,9 @@ h3 {
 }
 
 .status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   min-height: 22px;
   margin-top: 12px;
   color: var(--muted);
@@ -345,20 +356,42 @@ h3 {
 }
 
 .status:empty {
+  display: none;
   min-height: 0;
   margin-top: 0;
+}
+
+.status::before {
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  background: #8791a3;
+  border-radius: 50%;
+  content: "";
 }
 
 .status.error {
   color: var(--danger);
 }
 
+.status.error::before {
+  background: var(--danger);
+}
+
 .status.success {
   color: var(--success);
 }
 
+.status.success::before {
+  background: var(--success);
+}
+
 .status.loading {
   color: var(--primary);
+}
+
+.status.loading::before {
+  background: var(--primary);
 }
 
 .detail-grid {
@@ -385,7 +418,7 @@ h3 {
 }
 
 .text-button {
-  min-height: 28px;
+  min-height: 40px;
   padding: 0 6px;
   color: var(--primary);
   background: transparent;
@@ -412,7 +445,7 @@ h3 {
   font-size: 11px;
   line-height: 1.65;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .sql-keyword {
@@ -425,7 +458,7 @@ h3 {
 }
 
 .sql-comment {
-  color: #7d8799;
+  color: var(--muted);
   font-style: italic;
 }
 
@@ -441,7 +474,7 @@ h3 {
 }
 
 .overview-heading {
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .live-indicator {
@@ -468,18 +501,23 @@ h3 {
 
 .summary-card {
   min-width: 0;
-  padding: 12px 11px;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 11px 12px;
   background: #fbfbfe;
   border: 1px solid #eaebf2;
   border-radius: 10px;
 }
 
 .summary-card h3 {
-  margin: 0 0 6px;
+  min-height: 1.35em;
+  margin: 0 0 5px;
   color: var(--muted);
   font-size: 10px;
   font-weight: 560;
-  white-space: nowrap;
+  line-height: 1.35;
 }
 
 .summary-card p {
@@ -494,8 +532,8 @@ h3 {
 }
 
 .chart-wrapper {
-  margin-top: 22px;
-  padding-top: 17px;
+  margin-top: 17px;
+  padding-top: 14px;
   border-top: 1px solid #eceef4;
 }
 
@@ -516,30 +554,29 @@ h3 {
 
 .chart-area {
   display: grid;
-  gap: 8px;
-  min-height: 174px;
-  align-content: center;
-  padding: 4px 0;
+  gap: 7px;
+  align-content: start;
+  padding: 2px 0;
 }
 
 .chart-row {
   display: grid;
-  grid-template-columns: minmax(82px, 0.85fr) minmax(0, 2fr) 32px;
+  grid-template-columns: minmax(104px, 0.95fr) minmax(0, 2fr) 36px;
   align-items: center;
-  gap: 10px;
-  min-height: 14px;
+  gap: 9px;
+  min-height: 18px;
 }
 
 .chart-label {
-  overflow: hidden;
-  color: #566279;
-  font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  color: #4f5b72;
+  font-size: 11px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .chart-track {
-  height: 10px;
+  height: 9px;
   overflow: hidden;
   background: #f0f1f6;
   border-radius: 999px;
@@ -547,19 +584,14 @@ h3 {
 
 .chart-bar {
   height: 100%;
-  min-width: 3px;
+  min-width: 2px;
   background: #7770bd;
   border-radius: inherit;
-  transition: width 0.35s ease;
-}
-
-.chart-row:nth-child(even) .chart-bar {
-  background: #9b96cf;
 }
 
 .chart-value {
-  color: #58647a;
-  font-size: 10px;
+  color: #4f5b72;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
@@ -585,13 +617,21 @@ h3 {
 }
 
 .results-title h2 {
+  margin-bottom: 6px;
+}
+
+.result-metadata {
   display: flex;
   align-items: center;
-  gap: 9px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .result-count {
-  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 9px;
   color: #59647a;
   background: #f1f2f7;
   border-radius: 20px;
@@ -600,41 +640,68 @@ h3 {
   letter-spacing: 0;
 }
 
+.execution-time {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
 .toolbar {
   margin: 0;
 }
 
 .table-container {
+  max-width: 100%;
   overflow: auto;
   max-height: 480px;
   margin-top: 16px;
   border: 1px solid var(--panel-border);
   border-radius: 9px;
+  overscroll-behavior: contain;
 }
 
 table {
   width: 100%;
+  min-width: max-content;
   border-collapse: collapse;
   text-align: left;
 }
 
 th,
 td {
-  padding: 10px 13px;
+  padding: 11px 14px;
   border-bottom: 1px solid #edf0f4;
-  font-size: 11px;
-  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 th {
   position: sticky;
   top: 0;
+  max-width: 240px;
   color: #58647a;
   background: #f7f8fb;
+  border-bottom-color: #dfe4ed;
   font-size: 10px;
   font-weight: 650;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+}
+
+td {
+  max-width: 320px;
+  color: #344159;
+  overflow-wrap: anywhere;
+}
+
+td.numeric-cell {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+tbody tr:nth-child(even) {
+  background: #fcfcfe;
 }
 
 tbody tr:last-child td {
@@ -648,6 +715,8 @@ tbody tr:hover {
 .empty-cell {
   padding: 24px;
   color: var(--muted);
+  background: #fff;
+  font-size: 12px;
   text-align: center;
 }
 
@@ -674,7 +743,7 @@ tbody tr:hover {
 
 .history-item {
   width: 100%;
-  min-height: 0;
+  min-height: 40px;
   overflow: hidden;
   padding: 10px 12px;
   color: #566279;
@@ -763,6 +832,11 @@ tbody tr:hover {
   .summary-card p {
     font-size: 20px;
   }
+
+  .chart-row {
+    grid-template-columns: minmax(90px, 0.95fr) minmax(0, 2fr) 34px;
+    gap: 8px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -795,7 +869,7 @@ tbody tr:hover {
   }
 
   .reset-button {
-    min-height: 34px;
+    min-height: 40px;
     padding: 0 9px;
     font-size: 11px;
   }
